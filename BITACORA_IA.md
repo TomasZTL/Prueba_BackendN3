@@ -36,3 +36,15 @@ por categoría.
 
 Que corrigio?
 Nada, hizo todo bien.
+
+**Prompt 4: RF 06**
+Ahora crearemos un seguimiento de pedidos, necesito que tenga esto:
+ El cliente ve su historial de pedidos con el detalle y el total, y puede cancelar un pedido 
+Pendiente, lo que repone el stock. 
+• Un cliente no puede ver ni modificar pedidos de otra persona, aunque cambie la dirección en el 
+navegador. 
+• El encargado ve los pedidos del día filtrados por estado y los avanza en orden: Pendiente, En 
+preparación, Listo y Entregado. No se puede retroceder ni saltarse estados. 
+
+Que corrigio?
+Nada, todo bien.

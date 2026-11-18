@@ -1,0 +1,80 @@
+{% extends 'cafeteria/base.html' %}
+{% load moneda %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Mis Pedidos</h2>
+    <a href="{% url 'catalogo' %}" class="btn btn-primary">Nuevo Pedido</a>
+</div>
+
+{% for pedido in pedidos %}
+<div class="card shadow-sm mb-3">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <div>
+            <strong>Pedido #{{ pedido.id }}</strong>
+            <span class="text-muted ms-2">{{ pedido.fecha|date:"d/m/Y H:i" }}</span>
+            <span class="badge bg-dark ms-2">Retiro: {{ pedido.hora_retiro|time:"H:i" }}</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            {% if pedido.estado == 'Pendiente' %}
+                <span class="badge bg-warning text-dark">Pendiente</span>
+            {% elif pedido.estado == 'En preparación' %}
+                <span class="badge bg-info text-dark">En preparación</span>
+            {% elif pedido.estado == 'Listo' %}
+                <span class="badge bg-primary">Listo</span>
+            {% elif pedido.estado == 'Entregado' %}
+                <span class="badge bg-success">Entregado</span>
+            {% else %}
+                <span class="badge bg-danger">{{ pedido.estado }}</span>
+            {% endif %}
+            <a href="{% url 'pedido_detalle_cliente' pedido.pk %}" class="btn btn-sm btn-outline-secondary">Ver detalle</a>
+            {% if pedido.estado == 'Pendiente' %}
+            <form method="post" action="{% url 'pedido_cancelar' pedido.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar pedido</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Precio Unit.</th>
+                        <th class="text-end">Subtotal</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for det in pedido.detalles.all %}
+                    <tr>
+                        <td>{{ det.producto.nombre }}</td>
+                        <td>{{ det.cantidad }}</td>
+                        <td>{{ det.precio_unitario|clp }}</td>
+                        <td class="text-end">{{ det.subtotal|clp }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <th colspan="3" class="text-end">Total:</th>
+                        <th class="text-end text-success fs-6">{{ pedido.total|clp }}</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+        {% if pedido.observacion %}
+        <div class="mt-2 small text-muted">
+            <strong>Observación:</strong> {{ pedido.observacion }}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% empty %}
+<div class="alert alert-info">
+    Aún no has realizado pedidos.
+</div>
+{% endfor %}
+{% endblock %}

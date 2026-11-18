@@ -34,6 +34,7 @@ categorias_data = [
     ('Sándwiches', 'Sándwiches preparados y prensados', True),
     ('Pastelería', 'Dulces, queques y pasteles', True),
     ('Bebidas Frías', 'Jugos naturales, aguas y gaseosas', True),
+    ('Temporada Invierno', 'Productos estacionales fuera de carta', False),
 ]
 
 categorias = {}
@@ -65,6 +66,7 @@ productos_data = [
     ('CAF-018', 'Limonada Menta Jengibre', 'Bebidas Frías', 2500, 10, True),
     ('CAF-019', 'Bebida Lata 350ml', 'Bebidas Frías', 1500, 25, True),
     ('CAF-020', 'Té Helado Durazno', 'Bebidas Frías', 1700, 12, False),
+    ('CAF-021', 'Chocolate Caliente', 'Temporada Invierno', 2200, 10, True),
 ]
 
 for codigo, nombre, cat_nombre, precio, stock, disp in productos_data:

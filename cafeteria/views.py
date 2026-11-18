@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.db.models import Q, ProtectedError
+from django.utils import timezone
 from functools import wraps
 from .models import Categoria, Producto, Pedido, DetallePedido
 from .forms import CategoriaForm, ProductoForm, ConfirmarPedidoForm
@@ -417,4 +418,94 @@ def carrito_confirmar(request):
 
     request.session['carrito'] = {}
     messages.success(request, f'Pedido #{pedido.id} confirmado con éxito en estado Pendiente.')
-    return redirect('catalogo')
+    return redirect('mis_pedidos')
+
+
+@solo_cliente
+def mis_pedidos(request):
+    pedidos = Pedido.objects.filter(cliente=request.user).prefetch_related('detalles__producto').order_by('-fecha')
+    return render(request, 'cafeteria/mis_pedidos.html', {'pedidos': pedidos})
+
+
+@solo_cliente
+def pedido_detalle_cliente(request, pk):
+    pedido = get_object_or_404(Pedido.objects.prefetch_related('detalles__producto'), pk=pk)
+    if pedido.cliente != request.user:
+        raise PermissionDenied
+    return render(request, 'cafeteria/pedido_detalle_cliente.html', {'pedido': pedido})
+
+
+@solo_cliente
+def pedido_cancelar(request, pk):
+    pedido = get_object_or_404(Pedido.objects.prefetch_related('detalles__producto'), pk=pk)
+    if pedido.cliente != request.user:
+        raise PermissionDenied
+
+    if request.method == 'POST':
+        with transaction.atomic():
+            pedido_bloqueado = Pedido.objects.select_for_update().get(pk=pedido.pk)
+            if pedido_bloqueado.estado != 'Pendiente':
+                messages.error(request, 'Solo se pueden cancelar pedidos en estado Pendiente.')
+                return redirect('mis_pedidos')
+
+            for detalle in pedido_bloqueado.detalles.select_related('producto'):
+                producto = Producto.objects.select_for_update().get(pk=detalle.producto_id)
+                producto.stock += detalle.cantidad
+                producto.save()
+
+            pedido_bloqueado.estado = 'Cancelado'
+            pedido_bloqueado.save()
+
+        messages.success(request, f'Pedido #{pedido.id} cancelado. Se ha repuesto el stock de los productos.')
+    return redirect('mis_pedidos')
+
+
+TRANSICIONES_ESTADO = {
+    'Pendiente': 'En preparación',
+    'En preparación': 'Listo',
+    'Listo': 'Entregado',
+}
+
+
+@solo_encargado
+def gestion_pedidos(request):
+    hoy = timezone.localdate()
+    pedidos = Pedido.objects.filter(fecha__date=hoy).select_related('cliente').prefetch_related('detalles__producto').order_by('hora_retiro', 'fecha')
+
+    estado = request.GET.get('estado', '').strip()
+    estados_filtro = ['Pendiente', 'En preparación', 'Listo', 'Entregado', 'Cancelado']
+    if estado in estados_filtro:
+        pedidos = pedidos.filter(estado=estado)
+
+    for p in pedidos:
+        p.siguiente_estado = TRANSICIONES_ESTADO.get(p.estado)
+
+    return render(request, 'cafeteria/gestion_pedidos.html', {
+        'pedidos': pedidos,
+        'hoy': hoy,
+        'estado_seleccionado': estado,
+        'estados_filtro': estados_filtro,
+    })
+
+
+@solo_encargado
+def pedido_avanzar_estado(request, pk):
+    if request.method != 'POST':
+        return redirect('gestion_pedidos')
+
+    pedido = get_object_or_404(Pedido, pk=pk)
+    siguiente = TRANSICIONES_ESTADO.get(pedido.estado)
+
+    if not siguiente:
+        messages.error(request, f'El pedido #{pedido.id} está en estado "{pedido.estado}" y no puede avanzar más.')
+        return redirect('gestion_pedidos')
+
+    estado_solicitado = request.POST.get('nuevo_estado')
+    if estado_solicitado and estado_solicitado != siguiente:
+        messages.error(request, f'Transición inválida. El pedido debe pasar de "{pedido.estado}" a "{siguiente}".')
+        return redirect('gestion_pedidos')
+
+    pedido.estado = siguiente
+    pedido.save()
+    messages.success(request, f'Pedido #{pedido.id} avanzó al estado "{siguiente}".')
+    return redirect('gestion_pedidos')

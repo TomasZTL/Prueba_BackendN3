@@ -14,6 +14,7 @@ class ProductoAdmin(admin.ModelAdmin):
     list_display = ('codigo', 'nombre', 'categoria', 'precio', 'stock', 'disponible')
     search_fields = ('codigo', 'nombre')
     list_filter = ('categoria', 'disponible')
+    readonly_fields = ('creado',)
 
 
 class DetallePedidoInline(admin.TabularInline):
@@ -26,6 +27,7 @@ class PedidoAdmin(admin.ModelAdmin):
     list_display = ('id', 'cliente', 'fecha', 'hora_retiro', 'estado', 'total')
     search_fields = ('cliente__username', 'cliente__first_name')
     list_filter = ('estado', 'fecha')
+    readonly_fields = ('fecha',)
     inlines = [DetallePedidoInline]
 
 

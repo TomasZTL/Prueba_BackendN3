@@ -1,0 +1,54 @@
+{% extends 'cafeteria/base.html' %}
+{% load moneda %}
+
+{% block content %}
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">Detalle del Pedido #{{ pedido.id }}</h4>
+        <a href="{% url 'mis_pedidos' %}" class="btn btn-secondary btn-sm">Volver a Mis Pedidos</a>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-4"><strong>Fecha:</strong> {{ pedido.fecha|date:"d/m/Y H:i" }}</div>
+            <div class="col-md-4"><strong>Hora de retiro:</strong> {{ pedido.hora_retiro|time:"H:i" }}</div>
+            <div class="col-md-4"><strong>Estado:</strong> <span class="badge bg-secondary">{{ pedido.estado }}</span></div>
+        </div>
+        {% if pedido.observacion %}
+        <p><strong>Observación:</strong> {{ pedido.observacion }}</p>
+        {% endif %}
+        <table class="table table-bordered">
+            <thead class="table-light">
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unitario</th>
+                    <th class="text-end">Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for det in pedido.detalles.all %}
+                <tr>
+                    <td>{{ det.producto.nombre }}</td>
+                    <td>{{ det.cantidad }}</td>
+                    <td>{{ det.precio_unitario|clp }}</td>
+                    <td class="text-end">{{ det.subtotal|clp }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3" class="text-end">Total Pedido:</th>
+                    <th class="text-end text-success">{{ pedido.total|clp }}</th>
+                </tr>
+            </tfoot>
+        </table>
+
+        {% if pedido.estado == 'Pendiente' %}
+        <form method="post" action="{% url 'pedido_cancelar' pedido.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger">Cancelar Pedido</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
