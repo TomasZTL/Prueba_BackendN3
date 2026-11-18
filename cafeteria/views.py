@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from functools import wraps
+from .models import Categoria, Producto
 
 
 def solo_encargado(view_func):
@@ -58,7 +59,25 @@ def inicio(request):
 
 @solo_cliente
 def catalogo(request):
-    return render(request, 'cafeteria/catalogo.html')
+    categorias = Categoria.objects.filter(activa=True).order_by('nombre')
+    productos = Producto.objects.filter(disponible=True, categoria__activa=True).select_related('categoria').order_by('nombre')
+
+    q = request.GET.get('q', '').strip()
+    categoria_id = request.GET.get('categoria', '').strip()
+
+    if q:
+        productos = productos.filter(nombre__icontains=q)
+
+    if categoria_id:
+        productos = productos.filter(categoria_id=categoria_id)
+
+    context = {
+        'categorias': categorias,
+        'productos': productos,
+        'q': q,
+        'categoria_seleccionada': categoria_id,
+    }
+    return render(request, 'cafeteria/catalogo.html', context)
 
 
 @solo_encargado
