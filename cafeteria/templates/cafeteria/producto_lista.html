@@ -1,0 +1,84 @@
+{% extends 'cafeteria/base.html' %}
+{% load moneda %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Gestión de Productos</h2>
+    <a href="{% url 'producto_crear' %}" class="btn btn-primary">Nuevo Producto</a>
+</div>
+
+<form method="get" class="row g-3 mb-4 bg-white p-3 rounded shadow-sm border">
+    <div class="col-md-4">
+        <label for="q" class="form-label">Buscar por nombre o código</label>
+        <input type="text" name="q" id="q" class="form-control" placeholder="Ej: CAF-001 o Espresso" value="{{ q }}">
+    </div>
+    <div class="col-md-3">
+        <label for="categoria" class="form-label">Categoría</label>
+        <select name="categoria" id="categoria" class="form-select">
+            <option value="">Todas</option>
+            {% for cat in categorias %}
+            <option value="{{ cat.id }}" {% if categoria_seleccionada == cat.id|stringformat:"s" %}selected{% endif %}>
+                {{ cat.nombre }}
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label for="disponible" class="form-label">Disponibilidad</label>
+        <select name="disponible" id="disponible" class="form-select">
+            <option value="">Todos</option>
+            <option value="1" {% if disponible_seleccionado == '1' %}selected{% endif %}>Disponibles</option>
+            <option value="0" {% if disponible_seleccionado == '0' %}selected{% endif %}>No disponibles</option>
+        </select>
+    </div>
+    <div class="col-md-2 d-flex align-items-end gap-2">
+        <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+        <a href="{% url 'producto_lista' %}" class="btn btn-outline-secondary">Limpiar</a>
+    </div>
+</form>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Código</th>
+                    <th>Nombre</th>
+                    <th>Categoría</th>
+                    <th>Precio</th>
+                    <th>Stock</th>
+                    <th>Disponible</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for prod in productos %}
+                <tr>
+                    <td><code>{{ prod.codigo }}</code></td>
+                    <td class="fw-semibold">{{ prod.nombre }}</td>
+                    <td>{{ prod.categoria.nombre }}</td>
+                    <td>{{ prod.precio|clp }}</td>
+                    <td>{{ prod.stock }}</td>
+                    <td>
+                        {% if prod.disponible %}
+                        <span class="badge bg-success">Sí</span>
+                        {% else %}
+                        <span class="badge bg-secondary">No</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-end">
+                        <a href="{% url 'producto_detalle' prod.pk %}" class="btn btn-sm btn-outline-info">Ver</a>
+                        <a href="{% url 'producto_editar' prod.pk %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                        <a href="{% url 'producto_eliminar' prod.pk %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="text-center py-3">No se encontraron productos.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
