@@ -1,5 +1,7 @@
 import re
+from datetime import datetime, time, timedelta
 from django import forms
+from django.utils import timezone
 from .models import Categoria, Producto
 
 
@@ -44,3 +46,36 @@ class ProductoForm(forms.ModelForm):
         if stock is not None and stock < 0:
             raise forms.ValidationError('El stock no puede ser negativo.')
         return stock
+
+
+class ConfirmarPedidoForm(forms.Form):
+    hora_retiro = forms.TimeField(
+        label='Hora de retiro',
+        widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'})
+    )
+    observacion = forms.CharField(
+        label='Observación (opcional)',
+        required=False,
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2})
+    )
+
+    def clean_hora_retiro(self):
+        hora = self.cleaned_data.get('hora_retiro')
+        if not hora:
+            return hora
+
+        inicio = time(8, 0)
+        fin = time(18, 0)
+        if hora < inicio or hora > fin:
+            raise forms.ValidationError('La hora de retiro debe estar entre las 08:00 y las 18:00.')
+
+        ahora = timezone.localtime()
+        retiro_dt = datetime.combine(ahora.date(), hora)
+        ahora_naive = datetime.combine(ahora.date(), ahora.time().replace(microsecond=0))
+        minimo_dt = ahora_naive + timedelta(minutes=20)
+
+        if retiro_dt < minimo_dt:
+            hora_min = minimo_dt.strftime('%H:%M')
+            raise forms.ValidationError(f'La hora de retiro debe ser al menos 20 minutos después de la hora actual (mínimo {hora_min}).')
+
+        return hora

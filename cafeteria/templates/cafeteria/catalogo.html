@@ -48,7 +48,10 @@
                 </p>
                 <div class="mt-auto">
                     {% if prod.stock > 0 %}
-                    <button type="button" class="btn btn-primary w-100">Agregar al carrito</button>
+                    <form method="post" action="{% url 'carrito_agregar' prod.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-primary w-100">Agregar al carrito</button>
+                    </form>
                     {% else %}
                     <button type="button" class="btn btn-secondary w-100" disabled>Agotado</button>
                     {% endif %}
