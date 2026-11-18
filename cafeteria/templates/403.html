@@ -1,0 +1,9 @@
+{% extends 'cafeteria/base.html' %}
+
+{% block content %}
+<div class="alert alert-danger mt-4">
+    <h4>Acceso denegado (403)</h4>
+    <p>No tienes permisos para acceder a esta sección con tu rol actual.</p>
+    <a href="{% url 'inicio' %}" class="btn btn-secondary btn-sm">Volver al inicio</a>
+</div>
+{% endblock %}
